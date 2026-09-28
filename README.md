@@ -1,4 +1,4 @@
-# برنامج أبوسعيد الغذائي
+# برنامج ابوعلياء الغذائي
 
 A small, mobile-first Arabic/RTL one-day food allocation calculator. Enter calorie, protein and total-carbohydrate targets. The app chooses food quantities and splits them into the exact user-selected number of eating occasions, from 2 to 6 (default 3). Up to three are main meals, with any remaining occasions presented as snacks.
 
