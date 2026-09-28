@@ -2,7 +2,7 @@
 
 A small, mobile-first Arabic/RTL one-day food allocation calculator. Enter calorie, protein and total-carbohydrate targets. The app chooses food quantities and splits them into three main meals, with a fourth eating occasion when useful.
 
-**Live:** https://yawmi-nutrition.ahf8871.chatgpt.site
+**Live:** https://ahf88711.github.io/yawmi-nutrition-planner/
 
 No account, backend, runtime AI, analytics, target recommendation, or personal data storage. Nutrition calculations run entirely in the browser. Vanilla JavaScript modules and CSS; no production dependencies or build step.
 
@@ -79,7 +79,19 @@ Browser checks passed at 360, 390, 430 and 1024 px: Arabic RTL, no horizontal ov
 
 ## Deployment
 
-The site is hosted publicly through Sites. `.openai/hosting.json` identifies this site and declares `dist` as static content. Publish edits through the Sites skill/workflow with a fresh source credential, successful tests, an archive from the exact pushed commit, and a successful deployment status. Never place deployment credentials in files or public source.
+The site is hosted publicly through GitHub Pages from the `gh-pages` branch. Initial Sites publishing was attempted but its authenticated source endpoint repeatedly reset the connection. The optional `.openai/hosting.json` registration is retained for a future Sites deployment. Never place deployment credentials in files or public source.
+
+To publish an update:
+
+```sh
+node --test tests/*.test.js
+git add .
+git commit -m "Update planner"
+git push github main
+git subtree push --prefix dist github gh-pages
+```
+
+GitHub Pages automatically rebuilds after a push to `gh-pages`; wait for its successful build and test the public URL. `dist/.nojekyll` keeps the application a plain static site. Site source changes are published explicitly with the subtree command, so a main-branch-only push does not change production.
 
 For independent hosting, deploy `dist/` as the static root on Netlify, Cloudflare Pages or a similar static host, with no build command. There is only one HTML route; refreshes require no special SPA routing. Every asset uses relative URLs. Run the arithmetic tests before every release. GitHub is a public source mirror; automatic CI and production deployment are not configured because the available GitHub credential does not grant workflow creation.
 
