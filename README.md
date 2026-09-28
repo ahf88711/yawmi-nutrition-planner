@@ -22,6 +22,8 @@ The `dist/` directory is the authored application, not generated output. Edit th
 - `dist/planner.js`: pure arithmetic, portion rules and deterministic optimizer.
 - `dist/format.js`: display-only rounding and signed differences.
 - `dist/ui.js`: form, results, source details and optional WebMCP tool.
+- `dist/food-loader.js`: validated catalog loading, shared requests and recoverable retries.
+- `dist/planner-client.js` / `dist/planner-worker.js`: background calculation and cleanup; the same deterministic optimizer also supports environments without Workers.
 - `dist/style.css`: mobile-first RTL styling.
 - `tests/usda-extract.json`: independent extracted official USDA records for audit.
 
@@ -73,7 +75,7 @@ Only part of the verified catalog is needed by the current menu templates. No fo
 
 ## Verification
 
-`node --test tests/*.test.js` covers 18 tests: below/at/above 100 g arithmetic; fixed portions; eggs including explicit frying oil; slices; ml; rounding; independent unrounded meal/day recomputation; matching official CSV extracts; source/image completeness; six practical targets; deterministic results; invalid inputs; extreme/conflicting targets; honest display precision; exact 2–6 meal counts; compatible meal combinations; invalid meal counts.
+`node --test tests/*.test.js` covers 27 tests: below/at/above 100 g arithmetic; fixed portions; eggs including explicit frying oil; slices; ml; rounding; independent unrounded meal/day recomputation; matching official CSV extracts; source/image completeness; six practical targets; deterministic results; invalid inputs; extreme/conflicting targets; honest display precision; exact 2–6 meal counts; compatible meal combinations; invalid meal counts.
 
 Browser checks passed at 360, 390, 430 and 1024 px: Arabic RTL, no horizontal overflow, visible food quantities and totals match the calculation module, all meal photographs load, generation/edit buttons work, conflicting-target notice works, and no JavaScript errors occur. Optional WebMCP registration, execution and rejection were tested in a simulated context; native experimental-browser support was not available.
 
@@ -106,3 +108,13 @@ The reference-inspired editorial typography uses locally hosted Noto Sans Arabic
 ## Meal compatibility
 
 Meal count is a fourth explicit input, validated as an integer from 2 to 6. The selected value is retained when editing targets and supported by the optional WebMCP interface. Candidate compositions are constrained: oats pair with milk and fruit/nuts; savory breakfasts combine eggs or fava beans with bread and vegetables; cooked proteins pair with one starch and vegetables; tuna pairs with pasta and salad; cottage cheese pairs with toast, avocado and salad. Fruit, nuts and yogurt form separate snacks rather than being appended to cooked meat/fish plates. Fruit portions start at 60 g. The count always remains exact, even when target differences must be reported.
+
+## Reliability and release maintenance
+
+Catalogs are validated before use. Missing ingredients invalidate a whole candidate, rather than silently emitting an incomplete meal. Empty/malformed catalogs report errors. Failed HTTP, network, JSON or validation loads reset the cached promise; the next submission retries and refreshes source details after recovery.
+
+Generation uses a short-lived module Worker so optimization does not block page rendering. Each worker is terminated after success/error, with a 15-second timeout. Environments without Worker support use the same optimizer after yielding to the event loop. The form and WebMCP tool share one busy guard and always reset the button in a finally block.
+
+Static entry points and module imports carry `?v=review1` to prevent mixing cached old modules with the new named exports. When changing module interfaces in future releases, update this marker consistently across HTML, imports and the Worker URL, deploy all affected files together, then verify the public URL.
+
+Technical review: 27 automated tests passed; 30 before/after reference plans retained exactly identical quantities and totals. Browser checks confirmed the module Worker path and recovery from an injected first-request HTTP 503, including refresh of previously failed source details. This does not establish global optimizer optimality or guarantee identical timing on every device.
