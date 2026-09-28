@@ -81,7 +81,7 @@ Browser checks passed at 360, 390, 430 and 1024 px: Arabic RTL, no horizontal ov
 
 The site is hosted publicly through Sites. `.openai/hosting.json` identifies this site and declares `dist` as static content. Publish edits through the Sites skill/workflow with a fresh source credential, successful tests, an archive from the exact pushed commit, and a successful deployment status. Never place deployment credentials in files or public source.
 
-For independent hosting, deploy `dist/` as the static root on Netlify, Cloudflare Pages or a similar static host, with no build command. There is only one HTML route; refreshes require no special SPA routing. Every asset uses relative URLs. The included GitHub Actions workflow runs arithmetic tests on pushes and pull requests. GitHub is a public source mirror; automatic production deployment is not configured.
+For independent hosting, deploy `dist/` as the static root on Netlify, Cloudflare Pages or a similar static host, with no build command. There is only one HTML route; refreshes require no special SPA routing. Every asset uses relative URLs. Run the arithmetic tests before every release. GitHub is a public source mirror; automatic CI and production deployment are not configured because the available GitHub credential does not grant workflow creation.
 
 ## Images and attribution
 
