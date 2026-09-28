@@ -98,3 +98,7 @@ For independent hosting, deploy `dist/` as the static root on Netlify, Cloudflar
 ## Images and attribution
 
 The 34 local WebP thumbnails are original AI-generated representative food photographs created for this project, compressed to 209×209 px and loaded lazily. Branded entries use neutral representative photographs, **not manufacturer packaging**. Images are for identification, not portion-size estimation. Nutrition facts are attributed to their official providers; USDA data are public-domain US government data. Manufacturer names identify their products; no endorsement is implied. The repository does not redistribute the SFDA publication or manufacturer imagery.
+
+## Typography
+
+The reference-inspired editorial typography uses locally hosted Noto Sans Arabic ExtraBold for main headings and Noto Naskh Arabic Regular/Bold for reading text and controls. These are visually related alternatives, not the proprietary Thmanyah font seen in the reference. Fonts were retrieved from Google Fonts and losslessly converted to WOFF2 for delivery. Copyright belongs to the Noto Project Authors; SIL Open Font License copies are included in `licenses/`. No visitor request to Google Fonts is required.
