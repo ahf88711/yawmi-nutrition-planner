@@ -2,6 +2,7 @@
 export const keys = ['calories', 'protein', 'carbs'];
 export function validateTarget(t) {
   if (!t || !keys.every(k => typeof t[k] === 'number' && Number.isFinite(t[k])) || t.calories <= 0 || t.calories > 10000 || t.protein < 0 || t.protein > 1000 || t.carbs < 0 || t.carbs > 2000) throw new Error('أدخل أرقامًا صحيحة ضمن حدود الحاسبة: ١–١٠٠٠٠ سعرة، ٠–١٠٠٠ جم بروتين، ٠–٢٠٠٠ جم كربوهيدرات.');
+  if (t.mealCount !== undefined && (!Number.isInteger(t.mealCount) || t.mealCount < 2 || t.mealCount > 6)) throw new Error("اختر عدد الوجبات من ٢ إلى ٦.");
   return t;
 }
 export function nutrition(food, quantity) {
@@ -24,6 +25,8 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 // descent, practical rounding, then a discrete single/pair neighborhood search.
 export function generatePlan(foods, target) {
   validateTarget(target);
+  const mealCount=target.mealCount ?? 3;
+  const mainCount=Math.min(mealCount,3);
   const byId=Object.fromEntries(foods.filter(f=>f.available).map(f=>[f.id,f]));
   const scale=[Math.max(10,target.calories*.015),3,4], weights=[3,1.5,1];
   const desired=keys.map(k=>target[k]);
@@ -31,23 +34,31 @@ export function generatePlan(foods, target) {
   const proteins=['chicken','grouper','salmon','thigh','beef','lamb'].filter(x=>byId[x]);
   const starches=['rice','potatoes','pasta'].filter(x=>byId[x]);
   let best;
-  for(let menu=0;menu<54;menu++) {
+  for(let menu=0;menu<162;menu++) {
     const slots=[];
     const add=(id,meal,min,max)=>{if(byId[id])slots.push({food:byId[id],meal,min,max,step:byId[id].step});};
+    // Coherent combinations are hard constraints, not optional accuracy penalties.
     const breakfast=menu%3;
-    if(breakfast===0){add('egg',0,1,3);add('toast',0,1,4);add('milk',0,100,300);}
-    if(breakfast===1){add('oats',0,25,90);add('milk',0,150,300);add('greek',0,1,1);}
-    if(breakfast===2){add('fava',0,80,220);add('toast',0,1,4);add('egg',0,1,2);}
-    add(proteins[Math.floor(menu/3)%proteins.length],1,70,230);
-    add(starches[Math.floor(menu/6)%starches.length],1,60,320);
-    add('salad',1,100,200);add('oil',1,0,20);
-    const dinner=Math.floor(menu/9)%3;
-    if(dinner===0){add('chicken',2,60,220);add('potatoes',2,60,300);add('vegetables',2,100,200);add('oil',2,0,15);}
-    if(dinner===1){add('tuna',2,1,1);add('lentils',2,70,200);add('toast',2,1,3);add('salad',2,100,180);add('oil',2,0,15);}
-    if(dinner===2){add('cottage',2,100,250);add('toast',2,1,4);add('avocado',2,30,120);add('salad',2,100,150);}
-    // A fourth occasion only for candidates where it improves the fit.
-    if(menu%2===1){add('nada',3,1,1);add('banana',3,0,150);add('cashews',3,0,30);}
-    else {add('banana',0,0,120);add('pistachios',2,0,25);}
+    if(breakfast===0){add('egg',0,1,3);add('toast',0,1,4);add('cottage',0,80,200);add('salad',0,80,150);add('avocado',0,30,100);}
+    if(breakfast===1){add('oats',0,25,90);add('milk',0,150,300);add('banana',0,60,150);add('pistachios',0,10,25);if(mealCount<=3)add('greek',0,1,1);}
+    if(breakfast===2){add('fava',0,80,220);add('toast',0,1,4);add('egg',0,1,3);add('salad',0,80,150);add('oil',0,0,10);}
+    add(proteins[Math.floor(menu/3)%proteins.length],1,80,mealCount===2?300:230);
+    add(starches[Math.floor(menu/18)%starches.length],1,80,mealCount===2?400:320);
+    add('vegetables',1,100,200);add('oil',1,0,20);
+    if(mainCount===3){
+      const dinner=Math.floor(menu/54)%3;
+      if(dinner===0){add('chicken',2,80,230);add('potatoes',2,80,300);add('vegetables',2,100,200);add('oil',2,0,20);}
+      if(dinner===1){add('tuna',2,1,1);add('pasta',2,80,280);add('salad',2,100,180);add('oil',2,0,20);}
+      if(dinner===2){add('cottage',2,100,250);add('toast',2,1,4);add('avocado',2,40,120);add('salad',2,100,150);}
+    }
+    // Snacks remain independent eating occasions: no nuts beside fish or chicken,
+    // no isolated oil, and no tiny fruit fragments used only to fine-tune totals.
+    for(let snack=0;snack<mealCount-mainCount;snack++){
+      const meal=mainCount+snack, kind=(snack+Math.floor(menu/6))%3;
+      if(kind===0){add('nada',meal,1,1);add('dates',meal,20,60);add('cashews',meal,10,25);}
+      if(kind===1){add('greek',meal,1,1);add('banana',meal,60,150);add('pistachios',meal,10,25);}
+      if(kind===2){add('yogurt',meal,1,1);add('banana',meal,60,150);add('cashews',meal,10,25);}
+    }
     const A=slots.map(s=>keys.map(k=>nutrition(s.food,1)[k]));
     let q=slots.map(s=>(s.min+s.max)/2);
     let v=keys.map((_,k)=>q.reduce((sum,x,i)=>sum+x*A[i][k],0));
@@ -79,14 +90,15 @@ export function generatePlan(foods, target) {
     const rows=slots.map((s,i)=>({...s,quantity:q[i]})).filter(r=>r.quantity>0);
     const totals=total(rows);const score=loss(keys.map(k=>totals[k]));
     // Accuracy comes first. Small tie-break favors simpler, balanced plans.
-    const balance=[0,1,2].map(m=>total(rows.filter(r=>r.meal===m)).protein);
+    const balance=Array.from({length:mainCount},(_,i)=>i).map(m=>total(rows.filter(r=>r.meal===m)).protein);
     const rank=score+Math.max(0,Math.max(...balance)-Math.min(...balance)-30)*.002+rows.length*.0001;
     if(!best || rank<best.rank)best={rows,totals,rank};
   }
   if(!best)throw new Error('قاعدة الأغذية غير متاحة.');
-  const meals=['الفطور','الغداء','العشاء','وجبة خفيفة'].map((name,i)=>{const rows=best.rows.filter(r=>r.meal===i).map(({food,quantity})=>({food,quantity}));return {name,rows,totals:total(rows)};}).filter(m=>m.rows.length);
+  const names=mealCount===2?['الفطور','الوجبة الرئيسية']:['الفطور','الغداء','العشاء',...Array.from({length:mealCount-3},(_,i)=>`وجبة خفيفة ${i+1}`)];
+  const meals=names.map((name,i)=>{const rows=best.rows.filter(r=>r.meal===i).map(({food,quantity})=>({food,quantity}));return {name,rows,totals:total(rows)};}).filter(m=>m.rows.length);
   const totals=total(meals.flatMap(m=>m.rows));
   const differences=Object.fromEntries(keys.map(k=>[k,totals[k]-target[k]]));
   const within=Math.abs(differences.calories)<=target.calories*.03 && Math.abs(differences.protein)<=5 && Math.abs(differences.carbs)<=5;
-  return {target:{...target},totals,differences,within,meals};
+  return {target:{...target,mealCount},totals,differences,within,meals};
 }

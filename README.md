@@ -1,6 +1,6 @@
-# يومي · Yawmi
+# برنامجي الغذائي
 
-A small, mobile-first Arabic/RTL one-day food allocation calculator. Enter calorie, protein and total-carbohydrate targets. The app chooses food quantities and splits them into three main meals, with a fourth eating occasion when useful.
+A small, mobile-first Arabic/RTL one-day food allocation calculator. Enter calorie, protein and total-carbohydrate targets. The app chooses food quantities and splits them into the exact user-selected number of eating occasions, from 2 to 6 (default 3). Up to three are main meals, with any remaining occasions presented as snacks.
 
 **Live:** https://ahf88711.github.io/yawmi-nutrition-planner/
 
@@ -65,15 +65,15 @@ For any food, `nutrient = quantity × unit_amount / basis_amount × source_value
 
 ## Optimizer and limits
 
-The engine evaluates 54 deterministic practical menu candidates with changing proteins, staples and breakfast/dinner combinations. It performs bounded weighted least-squares coordinate descent in continuous quantities, rounds to food-specific practical increments, recalculates, then searches nearby discrete single and paired changes. Daily totals are recomputed from the final shown quantities. Accuracy is prioritized over variety; a small tie-break favors simpler plans and reasonable protein distribution.
+The engine evaluates 162 deterministic practical menu candidates with changing proteins, staples and breakfast/dinner combinations. It performs bounded weighted least-squares coordinate descent in continuous quantities, rounds to food-specific practical increments, recalculates, then searches nearby discrete single and paired changes. Daily totals are recomputed from the final shown quantities. Accuracy is prioritized over variety; a small tie-break favors simpler plans and reasonable protein distribution.
 
-Energy, protein and carbohydrate weighted-error priorities are 3, 1.5 and 1. The aim is ±3% kcal and ±5 g for each macro. This is a bounded heuristic search, **not a proof of the global optimum** or a universal feasibility solver. Extreme or conflicting inputs still return the best practical candidate found and clearly disclose differences. The algorithm never changes the user's target or invents an exact match. Bounds constrain portions to practical meal sizes (e.g. cooked meat/fish up to 230 g per meal, nuts up to 30 g per eating occasion, packaged items in whole fixed servings). Input limits protect the calculator; they are not recommended intake ranges.
+Energy, protein and carbohydrate weighted-error priorities are 3, 1.5 and 1. The aim is ±3% kcal and ±5 g for each macro. This is a bounded heuristic search, **not a proof of the global optimum** or a universal feasibility solver. Extreme or conflicting inputs still return the best practical candidate found and clearly disclose differences. The algorithm never changes the user's target or invents an exact match. Bounds constrain portions to practical meal sizes (e.g. cooked meat/fish up to 230 g per meal, or 300 g in a two-meal plan, nuts up to 30 g per eating occasion, packaged items in whole fixed servings). Input limits protect the calculator; they are not recommended intake ranges.
 
 Only part of the verified catalog is needed by the current menu templates. No food outside the approved list can be emitted. Source components used to calculate green salad are not separately selectable foods.
 
 ## Verification
 
-`node --test tests/*.test.js` covers 16 tests: below/at/above 100 g arithmetic; fixed portions; eggs including explicit frying oil; slices; ml; rounding; independent unrounded meal/day recomputation; matching official CSV extracts; source/image completeness; six practical targets; deterministic results; invalid inputs; extreme/conflicting targets; honest display precision.
+`node --test tests/*.test.js` covers 18 tests: below/at/above 100 g arithmetic; fixed portions; eggs including explicit frying oil; slices; ml; rounding; independent unrounded meal/day recomputation; matching official CSV extracts; source/image completeness; six practical targets; deterministic results; invalid inputs; extreme/conflicting targets; honest display precision; exact 2–6 meal counts; compatible meal combinations; invalid meal counts.
 
 Browser checks passed at 360, 390, 430 and 1024 px: Arabic RTL, no horizontal overflow, visible food quantities and totals match the calculation module, all meal photographs load, generation/edit buttons work, conflicting-target notice works, and no JavaScript errors occur. Optional WebMCP registration, execution and rejection were tested in a simulated context; native experimental-browser support was not available.
 
@@ -102,3 +102,7 @@ The 34 local WebP thumbnails are original AI-generated representative food photo
 ## Typography
 
 The reference-inspired editorial typography uses locally hosted Noto Sans Arabic ExtraBold for main headings and Noto Naskh Arabic Regular/Bold for reading text and controls. These are visually related alternatives, not the proprietary Thmanyah font seen in the reference. Fonts were retrieved from Google Fonts and losslessly converted to WOFF2 for delivery. Copyright belongs to the Noto Project Authors; SIL Open Font License copies are included in `licenses/`. No visitor request to Google Fonts is required.
+
+## Meal compatibility
+
+Meal count is a fourth explicit input, validated as an integer from 2 to 6. The selected value is retained when editing targets and supported by the optional WebMCP interface. Candidate compositions are constrained: oats pair with milk and fruit/nuts; savory breakfasts combine eggs or fava beans with bread and vegetables; cooked proteins pair with one starch and vegetables; tuna pairs with pasta and salad; cottage cheese pairs with toast, avocado and salad. Fruit, nuts and yogurt form separate snacks rather than being appended to cooked meat/fish plates. Fruit portions start at 60 g. The count always remains exact, even when target differences must be reported.

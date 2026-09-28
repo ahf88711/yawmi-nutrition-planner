@@ -8,10 +8,10 @@ const metric=(n)=>keys.map(k=>`<span><b dir="ltr">${fmt(n[k],k)}</b> ${k==='calo
 let latest;
 function render(p){
  latest=p;
- $('#results').innerHTML=`<div class="result-heading"><div><div class="eyebrow">كميات محسوبة لهدفك</div><h1 tabindex="-1" id="result-title">يومك الغذائي.</h1></div><button id="edit" class="text-button">تعديل الهدف</button></div>
+ $('#results').innerHTML=`<div class="result-heading"><div><div class="eyebrow">كميات محسوبة لهدفك</div><h1 tabindex="-1" id="result-title">برنامجك الغذائي.</h1></div><button id="edit" class="text-button">تعديل الهدف</button></div>
  <div class="summary-grid">${keys.map(k=>`<div><span>${labels[k]}</span><strong data-total="${k}" dir="ltr">${fmt(p.totals[k],k)}</strong><small>${units[k]} <span class="target-inline">/ ${fmt(p.target[k],k)}</span></small></div>`).join('')}</div>
  <p class="status ${p.within?'':'outside'}">${p.within?'ضمن هامش المطابقة: ±٣٪ للسعرات و±٥ جم للبروتين والكربوهيدرات.':'لم نجد خطة عملية تحقق هذه الأهداف معًا. هذه أقرب نتيجة وجدناها؛ راجع الفروق أدناه.'}</p>
- <p class="weight-note">الأوزان للجزء المأكول. حالة كل طعام موضحة أدناه.</p>
+ <p class="weight-note">الأوزان للجزء المأكول. حالة كل طعام موضحة أدناه. عدد الوجبات: ${p.meals.length}.</p>
  ${p.meals.map((m,i)=>`<article class="meal"><div class="meal-heading"><h2>${m.name}</h2><span dir="ltr">0${i+1}</span></div>${m.rows.map(r=>{const n=nutrition(r.food,r.quantity);return `<div class="food-row" data-food="${r.food.id}" data-quantity="${r.quantity}"><img src="${r.food.image}" alt="${r.food.name_ar}" width="64" height="64" loading="lazy"><div class="food-content"><h3>${r.food.name_ar}</h3><div class="quantity">${quantityLabel(r.food,r.quantity)}</div><div class="food-macros">${metric(n)}</div><details class="preparation"><summary>حالة الطعام</summary>${r.food.preparation}</details></div></div>`}).join('')}<div class="meal-total"><span>إجمالي الوجبة</span><div>${metric(m.totals)}</div></div></article>`).join('')}
  <section class="daily-total"><div class="eyebrow">كل الكميات محسوبة بعد التقريب</div><h2>إجمالي اليوم</h2><div class="daily-head"><span>العنصر</span><span>المحقق / الهدف</span><span>الفرق</span></div>${keys.map(k=>`<div class="daily-line"><span>${labels[k]}<small>${units[k]}</small></span><span dir="ltr"><b>${fmt(p.totals[k],k)}</b> / ${fmt(p.target[k],k)}</span><strong class="difference" dir="ltr">${diff(p.differences[k],k)}</strong></div>`).join('')}<p>القيم المعروضة مقربة؛ يُحسب الإجمالي والفرق من القيم الكاملة.</p></section><button id="edit-bottom" class="secondary">تعديل الأهداف</button>`;
  $('#start').hidden=true;$('#results').hidden=false;
@@ -24,7 +24,7 @@ async function submit(target){
 }
 $('#targets').addEventListener('submit',async e=>{
  e.preventDefault();const b=$('.primary');b.disabled=true;b.setAttribute('aria-busy','true');$('#error').hidden=true;
- try{await new Promise(r=>requestAnimationFrame(r));await submit(Object.fromEntries(keys.map(k=>[k,Number($('#'+k).value)])));}
+ try{await new Promise(r=>requestAnimationFrame(r));await submit({...Object.fromEntries(keys.map(k=>[k,Number($('#'+k).value)])),mealCount:Number($('#mealCount').value)});}
  catch(err){$('#error').textContent=err.message;$('#error').hidden=false;foodsPromise=fetch('./data/foods.json').then(r=>{if(!r.ok)throw new Error('تعذر تحميل بيانات الأغذية.');return r.json()});foodsPromise.catch(()=>{});}
  finally{b.disabled=false;b.removeAttribute('aria-busy');}
 });
@@ -34,6 +34,6 @@ foodsPromise.then(foods=>{
 const context=document.modelContext;
 if(context?.registerTool){
  const life=new AbortController();
- try{Promise.resolve(context.registerTool({name:'generate_daily_food_plan',title:'إنشاء يوم غذائي',description:'Generate and display a one-day plan from user-supplied calorie, protein and carbohydrate targets. Does not recommend targets or save personal data.',inputSchema:{type:'object',properties:{calories:{type:'number',exclusiveMinimum:0,maximum:10000},protein:{type:'number',minimum:0,maximum:1000},carbs:{type:'number',minimum:0,maximum:2000}},required:keys,additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},async execute(input){validateTarget(input);if(Object.keys(input).some(k=>!keys.includes(k)))throw new Error('Unexpected target field');const p=await submit(input);keys.forEach(k=>$('#'+k).value=input[k]);return {target:p.target,totals:p.totals,differences:p.differences,within:p.within,meals:p.meals.map(m=>({name:m.name,foods:m.rows.map(r=>({name:r.food.name_ar,quantity:quantityLabel(r.food,r.quantity)}))}))};}},{signal:life.signal})).catch(()=>{});}catch{}
+ try{Promise.resolve(context.registerTool({name:'generate_daily_food_plan',title:'إنشاء يوم غذائي',description:'Generate and display a one-day plan from user-supplied calorie, protein and carbohydrate targets and an exact meal count (2–6; defaults to 3). Does not recommend targets or save personal data.',inputSchema:{type:'object',properties:{calories:{type:'number',exclusiveMinimum:0,maximum:10000},protein:{type:'number',minimum:0,maximum:1000},carbs:{type:'number',minimum:0,maximum:2000},mealCount:{type:'integer',minimum:2,maximum:6,default:3}},required:keys,additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},async execute(input){validateTarget(input);if(Object.keys(input).some(k=>![...keys,'mealCount'].includes(k)))throw new Error('Unexpected target field');const p=await submit(input);keys.forEach(k=>$('#'+k).value=input[k]);$('#mealCount').value=p.target.mealCount;return {target:p.target,totals:p.totals,differences:p.differences,within:p.within,meals:p.meals.map(m=>({name:m.name,foods:m.rows.map(r=>({name:r.food.name_ar,quantity:quantityLabel(r.food,r.quantity)}))}))};}},{signal:life.signal})).catch(()=>{});}catch{}
  window.addEventListener('pagehide',()=>life.abort(),{once:true});
 }

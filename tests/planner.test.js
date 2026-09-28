@@ -46,3 +46,14 @@ test('inconsistent and extreme targets produce honest finite bounded results',()
 });
 test('malformed input rejected',()=>{for(const t of [null,{}, {calories:0,protein:2,carbs:3},{calories:NaN,protein:2,carbs:3},{calories:1800,protein:-1,carbs:100},{calories:'1800',protein:100,carbs:100}])assert.throws(()=>validateTarget(t));});
 test('display precision never pretends tiny differences are exactly zero',()=>{assert.equal(displayNumber(149.9823,'protein'),'150');assert.equal(displayDifference(.07,'calories'),'+<0.5');assert.equal(displayDifference(-.017,'protein'),'−<0.1');});
+test('user-selected 2–6 meal counts are exact, coherent and honestly recalculated',()=>{
+ for(const mealCount of [2,3,4,5,6])for(const calories of [1200,1800,2400]){
+ const p=generatePlan(foods,{calories,protein:150,carbs:170,mealCount});assert.equal(p.meals.length,mealCount);assert.equal(p.target.mealCount,mealCount);
+ const all=p.meals.flatMap(m=>m.rows);keys.forEach(k=>close(total(all)[k],p.totals[k]));
+ for(const m of p.meals){const ids=m.rows.map(r=>r.food.id);assert.ok(ids.length>=3);if(ids.some(id=>['chicken','salmon','grouper','beef','lamb','thigh','tuna'].includes(id))){assert.ok(!ids.some(id=>['banana','dates','cashews','pistachios','milk','greek','nada','yogurt'].includes(id)));}if(ids.includes('oats'))assert.ok(ids.includes('milk')&&ids.includes('banana'));for(const r of m.rows){assert.equal(r.quantity%r.food.step,0);if(r.food.id==='banana')assert.ok(r.quantity>=60);}}
+ }
+});
+test('invalid meal counts rejected and omitted meal count defaults to three',()=>{
+ for(const mealCount of [0,1,7,3.5,'4',null,NaN])assert.throws(()=>generatePlan(foods,{calories:1800,protein:150,carbs:170,mealCount}));
+ assert.equal(generatePlan(foods,{calories:1800,protein:150,carbs:170}).meals.length,3);
+});

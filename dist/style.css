@@ -17,3 +17,5 @@ h3{font-size:18px}
 .preparation summary{min-height:28px}
 .daily-line{font-size:16px}
 @media(max-width:375px){.header-note{font-size:13px}.input-card>span{font-size:16px}.daily-line{font-size:15px}}
+
+.brand{font-size:20px;gap:8px}.brand-icon{flex-shrink:0}.header-note{display:none}.macro-inputs{margin-bottom:12px}.meal-count-card{margin-bottom:24px}.meal-count-card select{display:block;width:100%;min-height:48px;margin-top:6px;padding:4px 8px;border:0;border-radius:8px;background:#f7f9f6;color:var(--ink);font:700 21px "Noto Naskh Arabic",serif;cursor:pointer}.meal-count-card small{display:block;font-size:14px;color:var(--muted);margin-top:5px}
